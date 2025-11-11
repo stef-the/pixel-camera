@@ -20,11 +20,14 @@ const defaultSettings: CameraSettings = {
 
 // Load from cookie if exists
 const saved = Cookies.get('cameraSettings');
-const initialSettings: CameraSettings = saved
-	? JSON.parse(saved)
-	: defaultSettings;
+const initialSettings: CameraSettings = saved ? JSON.parse(saved) : defaultSettings;
 
-export const settings: Writable<CameraSettings> = writable(initialSettings);
+export const settings = writable({
+	scale: 1,
+	pixelSize: 10,
+	selectedPalette: 'none',
+	exposure: 1
+});
 
 // Persist whenever it changes
 settings.subscribe((value) => {

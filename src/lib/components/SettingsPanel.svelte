@@ -1,41 +1,65 @@
 <script lang="ts">
 	import { settings } from '$lib/utils/settingsStore';
 	import { colorPalettes } from '$lib/utils/colorUtils';
-	import { get } from 'svelte/store';
+	import { onMount } from 'svelte';
 
 	export let isMobile: boolean;
 	export let onClose: () => void;
 
-	// Two-way bind to the settings store
-	let scale: number;
-	let pixelSize: number;
-	let selectedPalette: string;
 	let palettes = colorPalettes;
 
-	settings.subscribe((s) => {
-		scale = s.scale;
-		pixelSize = s.pixelSize;
-		selectedPalette = s.selectedPalette;
+	// Declare localSettings here to fix "not defined" error
+	let localSettings = {
+		scale: 1,
+		pixelSize: 10,
+		selectedPalette: 'none',
+		exposure: 1
+	};
+
+	let isOpen = false;
+
+	// Subscribe to settings store
+	const unsubscribe = settings.subscribe((s) => {
+		localSettings = { ...s }; // Make a copy
 	});
 
-	$: settings.update((s) => ({ ...s, scale, pixelSize, selectedPalette }));
+	onMount(() => {
+		isOpen = true; // trigger slide-up animation
+		return () => unsubscribe();
+	});
+
+	// Update store whenever sliders change
+	function updateSettings() {
+		settings.set({ ...localSettings });
+	}
+
+	function closePanel() {
+		isOpen = false; // slide down
+		setTimeout(() => onClose(), 200);
+	}
 </script>
 
-<!-- Subtle “dim behind panel” only for the panel area -->
+<!-- Shadow/blur behind panel -->
 <div
-	class="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-30 w-[90%] max-w-md rounded-3xl bg-gray-900/70 backdrop-blur-md shadow-2xl p-5 space-y-4"
+	class="absolute bottom-0 left-0 w-full h-24 pointer-events-none z-30"
+	style="background: linear-gradient(transparent, rgba(0,0,0,0.5));"
+></div>
+
+<!-- Panel -->
+<div
+	class="absolute bottom-0 left-0 w-full max-w-full rounded-t-3xl bg-gray-900/90 backdrop-blur-md shadow-2xl p-5 space-y-4 z-40 transition-transform duration-200"
+	class:translate-y-0={isOpen}
+	class:translate-y-full={!isOpen}
 	on:click|stopPropagation
 >
 	<h2 class="text-lg font-semibold text-white text-center">Settings</h2>
 
-	<!-- Palette Dropdown -->
+	<!-- Palette -->
 	<div class="space-y-1">
-		<label for="palette-select" class="block text-sm font-medium text-white">
-			Color Palette
-		</label>
+		<label class="block text-sm font-medium text-white">Color Palette</label>
 		<select
-			id="palette-select"
-			bind:value={selectedPalette}
+			bind:value={localSettings.selectedPalette}
+			on:change={updateSettings}
 			class="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
 		>
 			<option value="none">None</option>
@@ -45,42 +69,58 @@
 		</select>
 	</div>
 
-	<!-- Pixelation Slider -->
+	<!-- Pixelation -->
 	<div class="space-y-1">
-		<label for="pixel-size-slider" class="block text-sm font-medium text-white">
-			Pixel Size: {Math.round(pixelSize)}
+		<label class="block text-sm font-medium text-white">
+			Pixel Size: {Math.round(localSettings.pixelSize)}
 		</label>
 		<input
-			id="pixel-size-slider"
 			type="range"
 			min="2"
 			max="50"
 			step="1"
-			bind:value={pixelSize}
+			bind:value={localSettings.pixelSize}
+			on:input={updateSettings}
 			class="w-full accent-blue-500"
 		/>
 	</div>
 
-	<!-- Display Scale Slider -->
+	<!-- Display scale -->
 	<div class="space-y-1">
-		<label for="scale-slider" class="block text-sm font-medium text-white">
-			Display Scale: {Math.round(scale * 100)}%
+		<label class="block text-sm font-medium text-white">
+			Display Scale: {Math.round(localSettings.scale * 100)}%
 		</label>
 		<input
-			id="scale-slider"
 			type="range"
 			min="0.1"
 			max="1"
 			step="0.05"
-			bind:value={scale}
+			bind:value={localSettings.scale}
+			on:input={updateSettings}
 			class="w-full accent-blue-500"
 		/>
 	</div>
 
-	<!-- Close button -->
+	<!-- Exposure -->
+	<div class="space-y-1">
+		<label class="block text-sm font-medium text-white">
+			Exposure: {localSettings.exposure.toFixed(2)}
+		</label>
+		<input
+			type="range"
+			min="0.1"
+			max="3"
+			step="0.05"
+			bind:value={localSettings.exposure}
+			on:input={updateSettings}
+			class="w-full accent-yellow-500"
+		/>
+	</div>
+
+	<!-- Close Button -->
 	<div class="flex justify-center mt-2">
 		<button
-			on:click={onClose}
+			on:click={closePanel}
 			class="bg-blue-500 px-5 py-2 rounded-full font-medium hover:bg-blue-600 transition"
 		>
 			Close

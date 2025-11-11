@@ -9,6 +9,18 @@
 	import { settings } from '$lib/utils/settingsStore';
 	import { get } from 'svelte/store';
 
+	let currentSettings = {
+		scale: 1,
+		pixelSize: 10,
+		selectedPalette: 'none',
+		exposure: 1
+	};
+
+	// Subscribe to store updates
+	settings.subscribe((s) => {
+		currentSettings = s;
+	});
+
 	let stream: MediaStream | null = null;
 	let isActive = false;
 	let isMobile = false;
@@ -113,16 +125,27 @@
 				ctx.drawImage(video, 0, 0, smallW, smallH);
 
 				// 2. Apply selected palette
-				if (selectedPalette !== 'none') {
-					const palette = colorPalettes[selectedPalette];
+				if (selectedPalette !== 'none' && ctx) {
 					const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 					const data = imageData.data;
+
 					for (let i = 0; i < data.length; i += 4) {
-						const [nr, ng, nb] = nearestColor(data[i], data[i + 1], data[i + 2], palette);
+						let r = data[i] * currentSettings.exposure;
+						let g = data[i + 1] * currentSettings.exposure;
+						let b = data[i + 2] * currentSettings.exposure;
+
+						const [nr, ng, nb] = nearestColor(
+							Math.min(255, r),
+							Math.min(255, g),
+							Math.min(255, b),
+							colorPalettes[currentSettings.selectedPalette] || []
+						);
+
 						data[i] = nr;
 						data[i + 1] = ng;
 						data[i + 2] = nb;
 					}
+
 					ctx.putImageData(imageData, 0, 0);
 				}
 
@@ -214,13 +237,7 @@
 		/>
 
 		{#if showSettings && isActive}
-			<SettingsPanel
-				{scale}
-				{pixelSize}
-				{selectedPalette}
-				{isMobile}
-				onClose={() => (showSettings = false)}
-			/>
+			<SettingsPanel {isMobile} on:close={() => (showSettings = false)} />
 		{/if}
 
 		{#if isActive}
