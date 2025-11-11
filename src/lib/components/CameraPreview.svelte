@@ -1,7 +1,7 @@
 <!-- src/lib/components/CameraPreview.svelte -->
 <script>
 	import { createEventDispatcher } from 'svelte';
-	
+
 	export let isMobile;
 	export let isActive;
 	export let scale;
@@ -12,10 +12,10 @@
 	const dispatch = createEventDispatcher();
 </script>
 
-<div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+<div class="relative flex flex-1 items-center justify-center overflow-hidden bg-black">
 	{#if !isActive}
-		<button 
-			class="flex flex-col items-center gap-4 p-8 rounded-2xl bg-white/10 hover:bg-white/20 transition-all active:scale-95"
+		<button
+			class="flex flex-col items-center gap-4 rounded-2xl bg-white/10 p-8 transition-all hover:bg-white/20 active:scale-95"
 			on:click={() => dispatch('start')}
 			aria-label="Start camera"
 		>
@@ -36,7 +36,7 @@
 				/>
 				<circle cx="12" cy="13" r="3" />
 			</svg>
-			<span class="text-white text-lg">Start Camera</span>
+			<span class="text-lg text-white">Start Camera</span>
 		</button>
 	{:else}
 		<!-- svelte-ignore a11y-media-has-caption -->
@@ -45,12 +45,16 @@
 			autoplay
 			playsinline
 			muted
-			class="hidden"
+			class="absolute h-full w-full object-cover opacity-0"
 		></video>
+		<div class="absolute bottom-2 left-2 text-xs text-white">
+			{videoElement?.videoWidth}×{videoElement?.videoHeight}
+		</div>
+
 		<canvas bind:this={canvasElement} class="hidden"></canvas>
 		<canvas
 			bind:this={displayCanvasElement}
-			class="max-w-full max-h-full object-contain"
+			class="max-h-full max-w-full object-contain"
 			style="image-rendering: {scale < 1 ? 'pixelated' : 'auto'};"
 		></canvas>
 	{/if}

@@ -7,6 +7,7 @@
 	import SettingsPanel from './SettingsPanel.svelte';
 	import CameraPreview from './CameraPreview.svelte';
 	import { colorPalettes, nearestColor } from '$lib/utils/colorUtils';
+	import { tick } from 'svelte';
 
 	let stream: MediaStream | null = null;
 	let isActive = false;
@@ -39,6 +40,10 @@
 	}
 
 	async function startCamera() {
+		isActive = true;
+
+		await tick(); // ✅ Wait for <video> to exist
+
 		try {
 			const mediaStream = await navigator.mediaDevices.getUserMedia({
 				video: {
@@ -47,16 +52,19 @@
 					height: { ideal: 1080 }
 				}
 			});
-			stream = mediaStream;
-			isActive = true;
 
 			if (videoElement) {
+				stream = mediaStream;
 				videoElement.srcObject = mediaStream;
-				startProcessing();
+
+				videoElement.onloadedmetadata = () => {
+					videoElement.play();
+					startProcessing();
+				};
 			}
 		} catch (err) {
 			console.error('Error accessing camera:', err);
-			alert('Could not access camera. Please ensure camera permissions are granted.');
+			alert('Could not access camera. Please grant permissions.');
 		}
 	}
 
@@ -137,12 +145,12 @@
 			displayCanvasElement.toBlob((blob) => {
 				if (blob) {
 					const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `camera-${Date.now()}.png`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = `camera-${Date.now()}.png`;
+					a.click();
+					URL.revokeObjectURL(url);
+				}
 			});
 		}
 	}
