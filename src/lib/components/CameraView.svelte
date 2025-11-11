@@ -214,7 +214,13 @@
 		/>
 
 		{#if showSettings && isActive}
-			<SettingsPanel {isMobile} bind:scale bind:pixelSize bind:selectedPalette />
+			<SettingsPanel
+				{scale}
+				{pixelSize}
+				{selectedPalette}
+				{isMobile}
+				onClose={() => (showSettings = false)}
+			/>
 		{/if}
 
 		{#if isActive}

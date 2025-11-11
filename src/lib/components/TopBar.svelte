@@ -14,7 +14,7 @@
 		: 'bg-gradient-to-b from-black/60 to-transparent'}"
 >
 	<button
-		class="rounded-full bg-white/10 p-2 transition-colors hover:bg-white/20"
+		class="rounded bg-white/10 p-2 transition-colors hover:bg-white/20"
 		on:click={() => dispatch('toggleSettings')}
 		aria-label="Toggle settings"
 	>
@@ -38,7 +38,7 @@
 
 	{#if isActive}
 		<button
-			class="rounded-full bg-red-500/80 p-2 transition-colors hover:bg-red-600"
+			class="rounded bg-red-500/80 p-2 transition-colors hover:bg-red-600"
 			on:click={() => dispatch('stop')}
 			aria-label="Stop camera"
 		>
