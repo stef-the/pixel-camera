@@ -15,6 +15,7 @@
 	let scale = 1;
 	let isMobile = false;
 	let showSettings = false;
+	let pixelSize = 10; // default pixelation size
 
 	let videoElement: HTMLVideoElement | null = null;
 	let canvasElement: HTMLCanvasElement | null;
@@ -89,49 +90,34 @@
 			const ctx = canvas.getContext('2d', { willReadFrequently: true });
 			const displayCtx = displayCanvas.getContext('2d');
 
-			if (video.readyState === video.HAVE_ENOUGH_DATA) {
-				canvas.width = video.videoWidth;
-				canvas.height = video.videoHeight;
+			if (video.readyState === video.HAVE_ENOUGH_DATA && ctx && displayCtx) {
+				const pixelW = pixelSize;
+				const pixelH = pixelSize;
 
-				const scaledWidth = Math.floor(canvas.width * scale);
-				const scaledHeight = Math.floor(canvas.height * scale);
+				// 1. Draw video at small size (pixelated)
+				canvas.width = Math.floor(video.videoWidth / pixelW);
+				canvas.height = Math.floor(video.videoHeight / pixelH);
+				ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-				displayCanvas.width = scaledWidth;
-				displayCanvas.height = scaledHeight;
-
-				if (ctx) {
-					ctx.drawImage(video, 0, 0);
-				}
-
-				if (selectedPalette !== 'none' && ctx) {
+				// 2. Apply palette
+				if (selectedPalette !== 'none') {
 					const palette = colorPalettes[selectedPalette];
 					const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 					const data = imageData.data;
-
 					for (let i = 0; i < data.length; i += 4) {
 						const [nr, ng, nb] = nearestColor(data[i], data[i + 1], data[i + 2], palette);
 						data[i] = nr;
 						data[i + 1] = ng;
 						data[i + 2] = nb;
 					}
-
 					ctx.putImageData(imageData, 0, 0);
 				}
 
-				if (displayCtx) {
-					displayCtx.imageSmoothingEnabled = false;
-					displayCtx.drawImage(
-						canvas,
-						0,
-						0,
-						canvas.width,
-						canvas.height,
-						0,
-						0,
-						scaledWidth,
-						scaledHeight
-					);
-				}
+				// 3. Upscale to display canvas
+				displayCanvas.width = video.videoWidth * scale;
+				displayCanvas.height = video.videoHeight * scale;
+				displayCtx.imageSmoothingEnabled = false;
+				displayCtx.drawImage(canvas, 0, 0, displayCanvas.width, displayCanvas.height);
 			}
 
 			animationFrameId = requestAnimationFrame(processFrame);
@@ -190,7 +176,7 @@
 		/>
 
 		{#if showSettings && isActive}
-			<SettingsPanel {isMobile} bind:selectedPalette bind:scale />
+			<SettingsPanel {isMobile} bind:selectedPalette bind:scale bind:pixelSize />
 		{/if}
 
 		{#if isActive}

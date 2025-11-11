@@ -1,4 +1,4 @@
-export const colorPalettes = {
+export const colorPalettes: Record<string, RGB[]> = {
 	grayscale: [
 		[0, 0, 0],
 		[64, 64, 64],
@@ -38,18 +38,20 @@ export const colorPalettes = {
 type RGB = [number, number, number];
 
 export function nearestColor(r: number, g: number, b: number, palette: RGB[]): RGB {
-    let minDist = Infinity;
-    let nearest = palette[0];
+	let minDist = Infinity;
+	let nearest = palette[0];
 
-    for (const color of palette) {
-        const dist = Math.sqrt(
-            Math.pow(r - color[0], 2) + Math.pow(g - color[1], 2) + Math.pow(b - color[2], 2)
-        );
-        if (dist < minDist) {
-            minDist = dist;
-            nearest = color;
-        }
-    }
+	for (const color of palette) {
+		const dist = Math.sqrt(
+			Math.pow(r - color[0], 2) +
+				Math.pow(g - color[1], 2) +
+				Math.pow(b - color[2], 2)
+		);
+		if (dist < minDist) {
+			minDist = dist;
+			nearest = color;
+		}
+	}
 
-    return nearest;
+	return nearest;
 }

@@ -1,32 +1,66 @@
-<!-- src/lib/components/SettingsPanel.svelte -->
 <script lang="ts">
-	export let isMobile: boolean;
-	export let selectedPalette: string;
-	export let scale: number;
+	import { settings } from '$lib/utils/settingsStore';
+	import { colorPalettes as predefinedPalettes } from '$lib/utils/colorUtils';
+	import { get } from 'svelte/store';
+
+	let scale: number;
+	let pixelSize: number;
+	let selectedPalette: string;
+
+	// Subscribe store to local variables
+	settings.subscribe((s) => {
+		scale = s.scale;
+		pixelSize = s.pixelSize;
+		selectedPalette = s.selectedPalette;
+	});
+
+	// Update store when values change
+	$: settings.update((s) => ({ ...s, scale }));
+	$: settings.update((s) => ({ ...s, pixelSize }));
+	$: settings.update((s) => ({ ...s, selectedPalette }));
+
+	// Combine predefined + custom palettes
+	$: colorPalettes = { ...predefinedPalettes, ...get(settings).customPalettes };
 </script>
 
-<div class="absolute z-20 bg-black/80 backdrop-blur-xl rounded-2xl p-4 space-y-4 {isMobile ? 'bottom-24 left-4 right-4' : 'top-20 left-4 min-w-[250px]'}">
+<div class="absolute z-20 ...">
+	<!-- Palette Dropdown -->
 	<div class="space-y-2">
-		<label for="palette-select" class="text-white text-sm font-medium block">
+		<label for="palette-select" class="block text-sm font-medium text-white">
 			Color Palette
 		</label>
-		<select 
-			id="palette-select" 
-			bind:value={selectedPalette} 
-			class="w-full bg-white/10 text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+		<select
+			id="palette-select"
+			bind:value={selectedPalette}
+			class="w-full rounded-md border border-gray-700 bg-gray-900 px-2 py-1 text-white"
 		>
 			<option value="none">None</option>
-			<option value="grayscale">Grayscale</option>
-			<option value="retro">Retro</option>
-			<option value="gameboy">Game Boy</option>
-			<option value="cyberpunk">Cyberpunk</option>
-			<option value="pastel">Pastel</option>
+			{#each Object.keys(colorPalettes) as palette}
+				<option value={palette}>{palette}</option>
+			{/each}
 		</select>
 	</div>
 
+	<!-- Pixelation Slider -->
 	<div class="space-y-2">
-		<label for="scale-slider" class="text-white text-sm font-medium block">
-			Scale: {Math.round(scale * 100)}%
+		<label for="pixel-size-slider" class="block text-sm font-medium text-white">
+			Pixel Size: {Math.round(pixelSize)}
+		</label>
+		<input
+			id="pixel-size-slider"
+			type="range"
+			min="2"
+			max="50"
+			step="1"
+			bind:value={pixelSize}
+			class="w-full accent-blue-500"
+		/>
+	</div>
+
+	<!-- Display Scale Slider -->
+	<div class="space-y-2">
+		<label for="scale-slider" class="block text-sm font-medium text-white">
+			Display Scale: {Math.round(scale * 100)}%
 		</label>
 		<input
 			id="scale-slider"
@@ -39,10 +73,3 @@
 		/>
 	</div>
 </div>
-
-<style>
-	select option {
-		background-color: rgb(31, 41, 55);
-		color: white;
-	}
-</style>
