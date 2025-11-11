@@ -34,25 +34,27 @@
 	}
 
 	function closePanel() {
-		isOpen = false; // slide down
-		setTimeout(() => onClose(), 200);
+		isOpen = false;
+		setTimeout(() => {
+			if (onClose) onClose();
+		}, 200);
 	}
 </script>
 
 <!-- Shadow/blur behind panel -->
 <div
-	class="absolute bottom-0 left-0 w-full h-24 pointer-events-none z-30"
+	class="pointer-events-none absolute bottom-0 left-0 z-30 h-24 w-full"
 	style="background: linear-gradient(transparent, rgba(0,0,0,0.5));"
 ></div>
 
 <!-- Panel -->
 <div
-	class="absolute bottom-0 left-0 w-full max-w-full rounded-t-3xl bg-gray-900/90 backdrop-blur-md shadow-2xl p-5 space-y-4 z-40 transition-transform duration-200"
+	class="absolute bottom-0 left-0 z-40 w-full max-w-full space-y-4 rounded-t-3xl bg-gray-900/90 p-5 shadow-2xl backdrop-blur-md transition-transform duration-200"
 	class:translate-y-0={isOpen}
 	class:translate-y-full={!isOpen}
 	on:click|stopPropagation
 >
-	<h2 class="text-lg font-semibold text-white text-center">Settings</h2>
+	<h2 class="text-center text-lg font-semibold text-white">Settings</h2>
 
 	<!-- Palette -->
 	<div class="space-y-1">
@@ -60,7 +62,7 @@
 		<select
 			bind:value={localSettings.selectedPalette}
 			on:change={updateSettings}
-			class="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+			class="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-1 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
 		>
 			<option value="none">None</option>
 			{#each Object.keys(palettes) as palette}
@@ -118,10 +120,10 @@
 	</div>
 
 	<!-- Close Button -->
-	<div class="flex justify-center mt-2">
+	<div class="mt-2 flex justify-center">
 		<button
 			on:click={closePanel}
-			class="bg-blue-500 px-5 py-2 rounded-full font-medium hover:bg-blue-600 transition"
+			class="rounded-full bg-blue-500 px-5 py-2 font-medium transition hover:bg-blue-600"
 		>
 			Close
 		</button>
