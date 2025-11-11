@@ -1,26 +1,41 @@
-<!-- src/lib/components/CameraView.svelte -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { browser } from '$app/environment';
 	import TopBar from './TopBar.svelte';
 	import BottomBar from './BottomBar.svelte';
 	import SettingsPanel from './SettingsPanel.svelte';
 	import CameraPreview from './CameraPreview.svelte';
-	import { colorPalettes, nearestColor } from '$lib/utils/colorUtils';
-	import { tick } from 'svelte';
+	import { colorPalettes as predefinedPalettes, nearestColor } from '$lib/utils/colorUtils';
+	import { settings } from '$lib/utils/settingsStore';
+	import { get } from 'svelte/store';
 
 	let stream: MediaStream | null = null;
 	let isActive = false;
-	let selectedPalette: keyof typeof colorPalettes | 'none' = 'none';
-	let scale = 1;
 	let isMobile = false;
 	let showSettings = false;
-	let pixelSize = 10; // default pixelation size
+	let mediaRecorder: MediaRecorder | null = null;
+	let recordedChunks: BlobPart[] = [];
+	let isRecording = false;
 
 	let videoElement: HTMLVideoElement | null = null;
 	let canvasElement: HTMLCanvasElement | null;
 	let displayCanvasElement: HTMLCanvasElement | null;
 	let animationFrameId: number | undefined;
+
+	// Subscribe settings store
+	let scale: number;
+	let pixelSize: number;
+	let selectedPalette: string;
+	let customPalettes: Record<string, [number, number, number][]>;
+	let colorPalettes: Record<string, [number, number, number][]>;
+
+	settings.subscribe((s) => {
+		scale = s.scale;
+		pixelSize = s.pixelSize;
+		selectedPalette = s.selectedPalette;
+		customPalettes = s.customPalettes;
+		colorPalettes = { ...predefinedPalettes, ...customPalettes };
+	});
 
 	onMount(() => {
 		if (browser) {
@@ -43,15 +58,11 @@
 	async function startCamera() {
 		isActive = true;
 
-		await tick(); // ✅ Wait for <video> to exist
+		await tick(); // wait for <video> element to exist
 
 		try {
 			const mediaStream = await navigator.mediaDevices.getUserMedia({
-				video: {
-					facingMode: 'environment',
-					width: { ideal: 1920 },
-					height: { ideal: 1080 }
-				}
+				video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
 			});
 
 			if (videoElement) {
@@ -75,14 +86,16 @@
 			stream = null;
 			isActive = false;
 		}
-		if (animationFrameId) {
-			cancelAnimationFrame(animationFrameId);
-		}
+		if (animationFrameId) cancelAnimationFrame(animationFrameId);
 	}
 
 	function startProcessing() {
 		const processFrame = () => {
 			if (!videoElement || !canvasElement || !displayCanvasElement) return;
+			if (!videoElement.videoWidth || !videoElement.videoHeight) {
+				animationFrameId = requestAnimationFrame(processFrame);
+				return;
+			}
 
 			const video = videoElement;
 			const canvas = canvasElement;
@@ -90,16 +103,16 @@
 			const ctx = canvas.getContext('2d', { willReadFrequently: true });
 			const displayCtx = displayCanvas.getContext('2d');
 
-			if (video.readyState === video.HAVE_ENOUGH_DATA && ctx && displayCtx) {
-				const pixelW = pixelSize;
-				const pixelH = pixelSize;
+			if (ctx && displayCtx) {
+				// 1. Small processing canvas for pixelation
+				const smallW = Math.max(1, Math.floor(video.videoWidth / pixelSize));
+				const smallH = Math.max(1, Math.floor(video.videoHeight / pixelSize));
+				canvas.width = smallW;
+				canvas.height = smallH;
 
-				// 1. Draw video at small size (pixelated)
-				canvas.width = Math.floor(video.videoWidth / pixelW);
-				canvas.height = Math.floor(video.videoHeight / pixelH);
-				ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+				ctx.drawImage(video, 0, 0, smallW, smallH);
 
-				// 2. Apply palette
+				// 2. Apply selected palette
 				if (selectedPalette !== 'none') {
 					const palette = colorPalettes[selectedPalette];
 					const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -114,8 +127,8 @@
 				}
 
 				// 3. Upscale to display canvas
-				displayCanvas.width = video.videoWidth * scale;
-				displayCanvas.height = video.videoHeight * scale;
+				displayCanvas.width = Math.floor(video.videoWidth * scale);
+				displayCanvas.height = Math.floor(video.videoHeight * scale);
 				displayCtx.imageSmoothingEnabled = false;
 				displayCtx.drawImage(canvas, 0, 0, displayCanvas.width, displayCanvas.height);
 			}
@@ -145,11 +158,37 @@
 		showSettings = !showSettings;
 	}
 
-	$: if (isActive && videoElement && canvasElement && displayCanvasElement) {
-		if (animationFrameId) {
-			cancelAnimationFrame(animationFrameId);
+	// Video recording utilities
+	function startRecording() {
+		if (!displayCanvasElement) return;
+
+		const stream = displayCanvasElement.captureStream(30); // 30fps
+		recordedChunks = [];
+		mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+		mediaRecorder.ondataavailable = (e) => {
+			if (e.data.size > 0) recordedChunks.push(e.data);
+		};
+
+		mediaRecorder.onstop = () => {
+			const blob = new Blob(recordedChunks, { type: 'video/webm' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `camera-video-${Date.now()}.webm`;
+			a.click();
+			URL.revokeObjectURL(url);
+		};
+
+		mediaRecorder.start();
+		isRecording = true;
+	}
+
+	function stopRecording() {
+		if (mediaRecorder && isRecording) {
+			mediaRecorder.stop();
+			isRecording = false;
 		}
-		startProcessing();
 	}
 </script>
 
@@ -168,7 +207,6 @@
 		<CameraPreview
 			{isMobile}
 			{isActive}
-			{scale}
 			bind:videoElement
 			bind:canvasElement
 			bind:displayCanvasElement
@@ -176,11 +214,17 @@
 		/>
 
 		{#if showSettings && isActive}
-			<SettingsPanel {isMobile} bind:selectedPalette bind:scale bind:pixelSize />
+			<SettingsPanel {isMobile} bind:scale bind:pixelSize bind:selectedPalette />
 		{/if}
 
 		{#if isActive}
-			<BottomBar {isMobile} on:capture={capturePhoto} />
+			<BottomBar
+				{isMobile}
+				on:capture={capturePhoto}
+				on:startRecording={startRecording}
+				on:stopRecording={stopRecording}
+				{isRecording}
+			/>
 		{/if}
 	</div>
 </div>
