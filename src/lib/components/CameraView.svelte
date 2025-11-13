@@ -27,6 +27,10 @@
 	let recordedChunks: BlobPart[] = [];
 	let isRecording = false;
 
+	// Camera selection
+	let availableCameras: MediaDeviceInfo[] = [];
+	let selectedCameraId: string = '';
+
 	let videoElement: HTMLVideoElement | null = null;
 	let canvasElement: HTMLCanvasElement | null;
 	let displayCanvasElement: HTMLCanvasElement | null;
@@ -51,6 +55,7 @@
 		if (browser) {
 			checkMobile();
 			window.addEventListener('resize', checkMobile);
+			enumerateCameras();
 		}
 	});
 
@@ -65,15 +70,38 @@
 		isMobile = window.innerWidth < 768;
 	}
 
-	async function startCamera() {
+	async function enumerateCameras() {
+		try {
+			const devices = await navigator.mediaDevices.enumerateDevices();
+			availableCameras = devices.filter(device => device.kind === 'videoinput');
+			
+			// Set default camera (prefer back camera on mobile)
+			if (availableCameras.length > 0) {
+				const backCamera = availableCameras.find(cam => 
+					cam.label.toLowerCase().includes('back') || 
+					cam.label.toLowerCase().includes('rear') ||
+					cam.label.toLowerCase().includes('environment')
+				);
+				selectedCameraId = backCamera?.deviceId || availableCameras[0].deviceId;
+			}
+		} catch (err) {
+			console.error('Error enumerating cameras:', err);
+		}
+	}
+
+	async function startCamera(deviceId?: string) {
 		isActive = true;
 
 		await tick(); // wait for <video> element to exist
 
 		try {
-			const mediaStream = await navigator.mediaDevices.getUserMedia({
-				video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-			});
+			const constraints: MediaStreamConstraints = {
+				video: deviceId 
+					? { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+					: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+			};
+
+			const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
 			if (videoElement) {
 				stream = mediaStream;
@@ -84,6 +112,9 @@
 					startProcessing();
 				};
 			}
+
+			// Refresh camera list after permission granted (labels become available)
+			await enumerateCameras();
 		} catch (err) {
 			console.error('Error accessing camera:', err);
 			alert('Could not access camera. Please grant permissions.');
@@ -97,6 +128,15 @@
 			isActive = false;
 		}
 		if (animationFrameId) cancelAnimationFrame(animationFrameId);
+	}
+
+	async function switchCamera(deviceId: string) {
+		selectedCameraId = deviceId;
+		if (isActive) {
+			stopCamera();
+			await tick();
+			startCamera(deviceId);
+		}
 	}
 
 	function startProcessing() {
@@ -231,16 +271,19 @@
 			bind:videoElement
 			bind:canvasElement
 			bind:displayCanvasElement
-			on:start={startCamera}
+			on:start={() => startCamera(selectedCameraId)}
 		/>
 
 		{#if isActive}
 			<BottomBar
 				{isMobile}
-                on:toggleSettings={toggleSettings}
+				{availableCameras}
+				{selectedCameraId}
+				on:toggleSettings={toggleSettings}
 				on:capture={capturePhoto}
 				on:startRecording={startRecording}
 				on:stopRecording={stopRecording}
+				on:cameraChange={(e) => switchCamera(e.detail.deviceId)}
 				{isRecording}
 			/>
 		{/if}
