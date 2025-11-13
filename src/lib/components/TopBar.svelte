@@ -11,7 +11,7 @@
 <div
 	class="z-10 flex items-center justify-between p-4 {isMobile
 		? 'bg-black/40 backdrop-blur-xl'
-		: 'bg-gradient-to-b from-black/60 to-transparent'}"
+		: 'bg-linear-to-b from-black/60 to-transparent'}"
 >
 
 	<div class="font-semibold text-white">Camera</div>
