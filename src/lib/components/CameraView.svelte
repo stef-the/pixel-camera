@@ -30,6 +30,7 @@
 	let isOpen = false;
 
 	// Camera selection
+	let allCameras: MediaDeviceInfo[] = [];
 	let availableCameras: MediaDeviceInfo[] = [];
 	let selectedCameraId: string = '';
 
@@ -80,7 +81,14 @@
 	async function enumerateCameras() {
 		try {
 			const devices = await navigator.mediaDevices.enumerateDevices();
-			availableCameras = devices.filter((device) => device.kind === 'videoinput');
+			allCameras = devices.filter((device) => device.kind === 'videoinput');
+            const excludeKeywords = ['virtual', 'screen', 'display', 'double', 'triple'];
+            availableCameras = allCameras.filter(
+                (camera) =>
+                    !excludeKeywords.some((keyword) =>
+                        camera.label.toLowerCase().includes(keyword)
+                    )
+            );
 
 			// Set default camera (prefer back camera on mobile)
 			if (availableCameras.length > 0) {
