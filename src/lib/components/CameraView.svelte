@@ -3,11 +3,9 @@
 	import { browser } from '$app/environment';
 	import TopBar from './TopBar.svelte';
 	import BottomBar from './BottomBar.svelte';
-	import SettingsPanel from './SettingsPanel.svelte';
 	import CameraPreview from './CameraPreview.svelte';
 	import { colorPalettes as predefinedPalettes, nearestColor } from '$lib/utils/colorUtils';
 	import { settings } from '$lib/utils/settingsStore';
-	import { get } from 'svelte/store';
 
 	let currentSettings = {
 		scale: 1,
@@ -235,10 +233,6 @@
 			bind:displayCanvasElement
 			on:start={startCamera}
 		/>
-
-		{#if showSettings && isActive}
-			<SettingsPanel {isMobile} on:close={() => (showSettings = false)} />
-		{/if}
 
 		{#if isActive}
 			<BottomBar
