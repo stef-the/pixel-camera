@@ -6,6 +6,11 @@
 
 	const dispatch = createEventDispatcher();
 
+	function handleSettings() {
+		dispatch('toggleSettings')
+	}
+
+
 	function handleCapture() {
 		dispatch('capture');
 	}
@@ -22,7 +27,7 @@
 <div class="flex justify-center space-x-4 p-4">
 	<button
 		class="rounded bg-white/10 p-2 transition-colors hover:bg-white/20"
-		on:click={() => dispatch('toggleSettings')}
+		on:click={handleSettings}
 		aria-label="Toggle settings"
 	>
 		<svg
@@ -40,6 +45,7 @@
 			<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
 		</svg>
 	</button>
+
 	<button class="rounded bg-blue-500 px-4 py-2 text-white" on:click={handleCapture}>
 		Capture Photo
 	</button>

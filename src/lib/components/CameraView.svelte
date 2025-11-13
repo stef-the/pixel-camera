@@ -225,7 +225,7 @@
 			? 'flex h-full w-full flex-col'
 			: 'flex aspect-video w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-black shadow-2xl'}
 	>
-		<TopBar {isMobile} {isActive} on:toggleSettings={toggleSettings} on:stop={stopCamera} />
+		<TopBar {isMobile} {isActive} on:stop={stopCamera} />
 
 		<CameraPreview
 			{isMobile}
@@ -243,6 +243,7 @@
 		{#if isActive}
 			<BottomBar
 				{isMobile}
+                on:toggleSettings={toggleSettings}
 				on:capture={capturePhoto}
 				on:startRecording={startRecording}
 				on:stopRecording={stopRecording}
