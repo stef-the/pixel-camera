@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { settings } from '$lib/utils/settingsStore';
-    import { colorPalettes } from '$lib/utils/colorUtils';
+	import { colorPalettes } from '$lib/utils/colorUtils';
 
 	export let isOpen = false;
 
@@ -57,10 +57,10 @@
 			customPalettes: updatedPalettes
 		}));
 
-        // Add new custom palette to colorPalettes
-        colorPalettes[paletteName] = rgbColors;
-        console.log("Added new palette to colorPalettes:", paletteName, rgbColors);
-        console.log("Current colorPalettes:", colorPalettes);
+		// Add new custom palette to colorPalettes
+		colorPalettes[paletteName] = rgbColors;
+		console.log('Added new palette to colorPalettes:', paletteName, rgbColors);
+		console.log('Current colorPalettes:', colorPalettes);
 
 		// Reset form
 		paletteName = '';
@@ -97,6 +97,64 @@
 		colors = ['#000000'];
 		isEditMode = false;
 		editingPaletteName = '';
+	}
+
+	function parseGPL(fileContent: string): [number, number, number][] {
+		const lines = fileContent.split(/\r?\n/);
+		const colors: [number, number, number][] = [];
+
+		for (const line of lines) {
+			const trimmed = line.trim();
+			// skip headers and comments
+			if (
+				!trimmed ||
+				trimmed.startsWith('#') ||
+				trimmed.startsWith('GIMP') ||
+				trimmed.startsWith('Name:') ||
+				trimmed.startsWith('Columns:')
+			) {
+				continue;
+			}
+			const parts = trimmed.split(/\s+/);
+			if (parts.length >= 3) {
+				const r = parseInt(parts[0], 10);
+				const g = parseInt(parts[1], 10);
+				const b = parseInt(parts[2], 10);
+				if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+					colors.push([r, g, b]);
+				}
+			}
+		}
+
+		return colors;
+	}
+
+	async function importGPL() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.gpl';
+		input.onchange = async () => {
+			if (input.files && input.files.length > 0) {
+				const file = input.files[0];
+				const text = await file.text();
+				const importedColors = parseGPL(text);
+
+				if (importedColors.length > 0) {
+					// Convert to hex strings and add to current colors
+					const hexColors = importedColors.map(
+						([r, g, b]) =>
+							`#${r.toString(16).padStart(2, '0')}${g
+								.toString(16)
+								.padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+					);
+					colors = [...colors, ...hexColors];
+					alert(`Imported ${importedColors.length} colors from ${file.name}`);
+				} else {
+					alert('No valid colors found in this .gpl file.');
+				}
+			}
+		};
+		input.click();
 	}
 
 	function close() {
@@ -158,10 +216,11 @@
 
 				<!-- Colors Section -->
 				<div class="mb-6">
-					<div class="mb-2 flex items-center justify-between">
-						<label for="add-color-button" class="block text-sm font-medium text-white">Colors</label>
+					<div class="mb-4 flex items-center justify-between">
+						<label for="add-color-button" class="block text-sm font-medium text-white">Colors</label
+						>
 						<button
-                            id="add-color-button"
+							id="add-color-button"
 							on:click={addColor}
 							class="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700"
 						>
@@ -267,20 +326,30 @@
 			<!-- Footer -->
 			<div class="border-t border-gray-700 p-4">
 				<div class="flex gap-3">
-					{#if isEditMode}
+					<div class="grid w-full grid-cols-1 gap-3 md:grid">
+						{#if isEditMode}
+							<button
+								on:click={cancelEdit}
+								class="w-full flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white transition-colors hover:bg-gray-700"
+							>
+								Cancel Edit
+							</button>
+						{/if}
+
 						<button
-							on:click={cancelEdit}
-							class="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white transition-colors hover:bg-gray-700"
+							on:click={savePalette}
+							class="w-full flex-1 rounded-lg bg-green-700 px-4 py-2 text-white transition-colors hover:bg-green-800"
 						>
-							Cancel Edit
+							{isEditMode ? 'Update Palette' : 'Save Palette'}
 						</button>
-					{/if}
-					<button
-						on:click={savePalette}
-						class="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
-					>
-						{isEditMode ? 'Update Palette' : 'Save Palette'}
-					</button>
+
+						<button
+							on:click={importGPL}
+							class="w-full flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+						>
+							Import .gpl
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
