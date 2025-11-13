@@ -61,47 +61,23 @@
 		<!-- Settings Panel -->
 		{#if showSettings}
 			<div
-				class="absolute right-0 bottom-full left-0 mb-0 w-full rounded-t-2xl border-x border-t border-gray-700 bg-gray-900/95 p-4 shadow-xl backdrop-blur-lg"
+				class="absolute right-0 bottom-full left-0 mb-0 w-full rounded-t-2xl bg-black/50 p-4 shadow-xl backdrop-blur-lg"
 				style="transform: translateZ(0); -webkit-transform: translateZ(0);"
 				role="region"
 				aria-label="Settings panel"
 			>
 				<!-- Inner wrapper just to stop click propagation -->
 				<div role="presentation" on:click|stopPropagation>
-					<div class="mb-3 flex items-center justify-between">
-						<h2 class="text-lg font-semibold text-white">Settings</h2>
-						<button
-							on:click={toggleSettings}
-							class="text-white transition hover:text-gray-300"
-							aria-label="Close settings"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="20"
-								height="20"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<line x1="18" y1="6" x2="6" y2="18" />
-								<line x1="6" y1="6" x2="18" y2="18" />
-							</svg>
-						</button>
-					</div>
-
 					<!-- Settings Grid -->
 					<div class="grid grid-cols-2 gap-3 text-sm text-white">
 						<!-- Camera Selection -->
 						{#if availableCameras.length > 1}
-							<label for="camera-select" class="col-span-2 font-medium">Camera</label>
+							<label for="camera-select" class="font-medium">Camera</label>
 							<select
 								id="camera-select"
 								value={selectedCameraId}
 								on:change={handleCameraChange}
-								class="col-span-2 rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-white focus:ring-2 focus:ring-blue-500"
+								class="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-white focus:ring-2 focus:ring-blue-500 text-xs"
 							>
 								{#each availableCameras as camera}
 									<option value={camera.deviceId}>
@@ -116,7 +92,7 @@
 							id="palette-select"
 							bind:value={localSettings.selectedPalette}
 							on:change={updateSettings}
-							class="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-white focus:ring-2 focus:ring-blue-500"
+							class="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-white focus:ring-2 focus:ring-blue-500 text-xs"
 						>
 							<option value="none">None</option>
 							{#each Object.keys(palettes) as palette}

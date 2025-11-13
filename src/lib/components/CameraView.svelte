@@ -277,6 +277,7 @@
 
 		{#if isActive}
 			<BottomBar
+                {isMobile}
 				{availableCameras}
 				{selectedCameraId}
 				on:toggleSettings={toggleSettings}
