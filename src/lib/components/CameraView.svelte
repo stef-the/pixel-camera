@@ -40,14 +40,15 @@
 	let scale: number;
 	let pixelSize: number;
 	let selectedPalette: string;
-	let customPalettes: Record<string, [number, number, number][]>;
-	let colorPalettes: Record<string, [number, number, number][]>;
-
+	let customPalettes: Record<string, [number, number, number][]> = {};
+	let colorPalettes: Record<string, [number, number, number][]> = {};
+	
 	settings.subscribe((s) => {
 		scale = s.scale;
 		pixelSize = s.pixelSize;
 		selectedPalette = s.selectedPalette;
-		customPalettes = s.customPalettes;
+		// s may not have customPalettes in its declared type, so guard with any and fallback to {}
+		customPalettes = (s as any).customPalettes || {};
 		colorPalettes = { ...predefinedPalettes, ...customPalettes };
 	});
 
@@ -73,14 +74,15 @@
 	async function enumerateCameras() {
 		try {
 			const devices = await navigator.mediaDevices.enumerateDevices();
-			availableCameras = devices.filter(device => device.kind === 'videoinput');
-			
+			availableCameras = devices.filter((device) => device.kind === 'videoinput');
+
 			// Set default camera (prefer back camera on mobile)
 			if (availableCameras.length > 0) {
-				const backCamera = availableCameras.find(cam => 
-					cam.label.toLowerCase().includes('back') || 
-					cam.label.toLowerCase().includes('rear') ||
-					cam.label.toLowerCase().includes('environment')
+				const backCamera = availableCameras.find(
+					(cam) =>
+						cam.label.toLowerCase().includes('back') ||
+						cam.label.toLowerCase().includes('rear') ||
+						cam.label.toLowerCase().includes('environment')
 				);
 				selectedCameraId = backCamera?.deviceId || availableCameras[0].deviceId;
 			}
@@ -96,7 +98,7 @@
 
 		try {
 			const constraints: MediaStreamConstraints = {
-				video: deviceId 
+				video: deviceId
 					? { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
 					: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
 			};
@@ -108,7 +110,7 @@
 				videoElement.srcObject = mediaStream;
 
 				videoElement.onloadedmetadata = () => {
-					videoElement.play();
+					if (videoElement) videoElement.play();
 					startProcessing();
 				};
 			}
@@ -256,7 +258,7 @@
 <div
 	class={isMobile
 		? 'fixed inset-0 bg-black'
-		: 'flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-8'}
+		: 'flex min-h-screen items-center justify-center bg-linear-to-br from-slate-900 to-slate-800 p-8'}
 >
 	<div
 		class={isMobile
@@ -266,7 +268,6 @@
 		<TopBar {isMobile} {isActive} on:stop={stopCamera} />
 
 		<CameraPreview
-			{isMobile}
 			{isActive}
 			bind:videoElement
 			bind:canvasElement
@@ -276,7 +277,6 @@
 
 		{#if isActive}
 			<BottomBar
-				{isMobile}
 				{availableCameras}
 				{selectedCameraId}
 				on:toggleSettings={toggleSettings}

@@ -2,9 +2,8 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 
-	export let isMobile;
+	//export let isMobile;
 	export let isActive;
-	export let scale;
 	export let videoElement;
 	export let canvasElement;
 	export let displayCanvasElement;
@@ -55,7 +54,7 @@
 		<canvas
 			bind:this={displayCanvasElement}
 			class="max-h-full max-w-full object-contain"
-			style="image-rendering: {scale < 1 ? 'pixelated' : 'auto'};"
+			style="image-rendering: pixelated;"
 		></canvas>
 	{/if}
 </div>
