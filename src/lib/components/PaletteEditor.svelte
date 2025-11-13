@@ -18,6 +18,14 @@
 		localCustomPalettes = (s as any).customPalettes || {};
 	});
 
+	function resetPalette() {
+		if (isEditMode) {
+			editPalette(editingPaletteName);
+		} else {
+			colors = ['#000000'];
+		}
+	}
+
 	function addColor() {
 		colors = [...colors, '#000000'];
 	}
@@ -157,6 +165,40 @@
 		input.click();
 	}
 
+	async function importGPL_URL() {
+		const url = prompt('Enter the URL of the .gpl file:');
+
+		if (url) {
+			try {
+				const response = await fetch(url);
+				if (!response.ok) {
+					throw new Error('Network response was not ok');
+				}
+				const text = await response.text();
+				const importedColors = parseGPL(text);
+
+				if (importedColors.length > 0) {
+					// Convert to hex strings and add to current colors
+					const hexColors = importedColors.map(
+						([r, g, b]) =>
+							`#${r.toString(16).padStart(2, '0')}${g
+								.toString(16)
+								.padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+					);
+					colors = [...colors, ...hexColors];
+					alert(`Imported ${importedColors.length} colors from URL`);
+				} else {
+					alert('No valid colors found in the .gpl file at the provided URL.');
+				}
+			} catch (error) {
+				alert(
+					'Failed to fetch or parse the .gpl file: ' +
+						(error instanceof Error ? error.message : String(error))
+				);
+			}
+		}
+	}
+
 	function close() {
 		dispatch('close');
 	}
@@ -217,15 +259,26 @@
 				<!-- Colors Section -->
 				<div class="mb-6">
 					<div class="mb-4 flex items-center justify-between">
-						<label for="add-color-button" class="block text-sm font-medium text-white">Colors</label
-						>
-						<button
-							id="add-color-button"
-							on:click={addColor}
-							class="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700"
-						>
-							+ Add Color
-						</button>
+						<span class="block font-bold text-sm text-white">Colors</span>
+
+						<div>
+							<!-- Reset palette -->
+							<button
+								on:click={resetPalette}
+								class="rounded-lg bg-red-600 px-3 py-1 text-sm text-white transition-colors hover:bg-red-700"
+							>
+								Reset Palette
+							</button>
+
+							<!-- Add a color -->
+							<button
+								id="add-color-button"
+								on:click={addColor}
+								class="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700"
+							>
+								+ Add Color
+							</button>
+						</div>
 					</div>
 
 					<div class="space-y-3">
@@ -326,11 +379,11 @@
 			<!-- Footer -->
 			<div class="border-t border-gray-700 p-4">
 				<div class="flex gap-3">
-					<div class="grid w-full grid-cols-1 gap-3 md:grid">
+					<div class="grid w-full grid-cols-2 gap-3 md:grid">
 						{#if isEditMode}
 							<button
 								on:click={cancelEdit}
-								class="w-full flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white transition-colors hover:bg-gray-700"
+								class="col-span-2 w-full flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white transition-colors hover:bg-gray-700"
 							>
 								Cancel Edit
 							</button>
@@ -338,7 +391,7 @@
 
 						<button
 							on:click={savePalette}
-							class="w-full flex-1 rounded-lg bg-green-700 px-4 py-2 text-white transition-colors hover:bg-green-800"
+							class="col-span-2 w-full flex-1 rounded-lg bg-green-700 px-4 py-2 text-white transition-colors hover:bg-green-800"
 						>
 							{isEditMode ? 'Update Palette' : 'Save Palette'}
 						</button>
@@ -347,7 +400,14 @@
 							on:click={importGPL}
 							class="w-full flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
 						>
-							Import .gpl
+							Import from .gpl
+						</button>
+
+						<button
+							on:click={importGPL_URL}
+							class="w-full flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+						>
+							Import from URL
 						</button>
 					</div>
 				</div>
