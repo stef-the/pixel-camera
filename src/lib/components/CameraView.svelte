@@ -4,7 +4,8 @@
 	import TopBar from './TopBar.svelte';
 	import BottomBar from './BottomBar.svelte';
 	import CameraPreview from './CameraPreview.svelte';
-	import { colorPalettes as predefinedPalettes, nearestColor } from '$lib/utils/colorUtils';
+	import PaletteEditor from './PaletteEditor.svelte';
+	import { colorPalettes as currentPalettes, nearestColor } from '$lib/utils/colorUtils';
 	import { settings } from '$lib/utils/settingsStore';
 
 	let currentSettings = {
@@ -26,6 +27,7 @@
 	let mediaRecorder: MediaRecorder | null = null;
 	let recordedChunks: BlobPart[] = [];
 	let isRecording = false;
+	let isOpen = false;
 
 	// Camera selection
 	let availableCameras: MediaDeviceInfo[] = [];
@@ -42,14 +44,14 @@
 	let selectedPalette: string;
 	let customPalettes: Record<string, [number, number, number][]> = {};
 	let colorPalettes: Record<string, [number, number, number][]> = {};
-	
+
 	settings.subscribe((s) => {
 		scale = s.scale;
 		pixelSize = s.pixelSize;
 		selectedPalette = s.selectedPalette;
 		// s may not have customPalettes in its declared type, so guard with any and fallback to {}
 		customPalettes = (s as any).customPalettes || {};
-		colorPalettes = { ...predefinedPalettes, ...customPalettes };
+		colorPalettes = { ...currentPalettes, ...customPalettes };
 	});
 
 	onMount(() => {
@@ -66,6 +68,10 @@
 			stopCamera();
 		}
 	});
+
+	function openPaletteEditor() {
+		isOpen = true;
+	}
 
 	function checkMobile() {
 		isMobile = window.innerWidth < 768;
@@ -277,7 +283,6 @@
 
 		{#if isActive}
 			<BottomBar
-                {isMobile}
 				{availableCameras}
 				{selectedCameraId}
 				on:toggleSettings={toggleSettings}
@@ -285,8 +290,11 @@
 				on:startRecording={startRecording}
 				on:stopRecording={stopRecording}
 				on:cameraChange={(e) => switchCamera(e.detail.deviceId)}
+				on:openPaletteEditor={openPaletteEditor}
 				{isRecording}
 			/>
 		{/if}
+
+		<PaletteEditor {isOpen} on:close={() => (isOpen = false)} />
 	</div>
 </div>

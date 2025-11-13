@@ -1,4 +1,4 @@
-export const colorPalettes: Record<string, RGB[]> = {
+const defaultColorPalettes: Record<string, RGB[]> = {
 	grayscale: [
 		[0, 0, 0],
 		[64, 64, 64],
@@ -33,6 +33,10 @@ export const colorPalettes: Record<string, RGB[]> = {
 		[186, 255, 201],
 		[186, 225, 255]
 	]
+};
+
+export let colorPalettes: Record<string, RGB[]> = {
+	...defaultColorPalettes
 };
 
 type RGB = [number, number, number];

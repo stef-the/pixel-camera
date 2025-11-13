@@ -4,7 +4,7 @@
 	import { colorPalettes } from '$lib/utils/colorUtils';
 	import { onMount } from 'svelte';
 
-	export let isMobile: boolean;
+	//export let isMobile: boolean;
 	export let isRecording: boolean;
 	export let availableCameras: MediaDeviceInfo[] = [];
 	export let selectedCameraId: string = '';
@@ -17,6 +17,7 @@
 		scale: 1,
 		pixelSize: 10,
 		selectedPalette: 'none',
+		customPalettes: {} as Record<string, [number, number, number][]>,
 		exposure: 1
 	};
 
@@ -53,6 +54,15 @@
 		const target = event.target as HTMLSelectElement;
 		dispatch('cameraChange', { deviceId: target.value });
 	}
+
+	function openPaletteEditor() {
+		dispatch('openPaletteEditor');
+	}
+
+	// Add custom palettes to local palettes whenever localSettings.customPalettes changes
+	$: {
+		palettes = { ...colorPalettes, ...localSettings.customPalettes };
+	}
 </script>
 
 <!-- Fixed positioning container -->
@@ -77,7 +87,7 @@
 								id="camera-select"
 								value={selectedCameraId}
 								on:change={handleCameraChange}
-								class="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-white focus:ring-2 focus:ring-blue-500 text-xs"
+								class="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-white focus:ring-2 focus:ring-blue-500"
 							>
 								{#each availableCameras as camera}
 									<option value={camera.deviceId}>
@@ -92,7 +102,7 @@
 							id="palette-select"
 							bind:value={localSettings.selectedPalette}
 							on:change={updateSettings}
-							class="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-white focus:ring-2 focus:ring-blue-500 text-xs"
+							class="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-white focus:ring-2 focus:ring-blue-500"
 						>
 							<option value="none">None</option>
 							{#each Object.keys(palettes) as palette}
@@ -135,6 +145,14 @@
 							on:input={updateSettings}
 							class="w-full accent-yellow-500"
 						/>
+
+						<!-- Color Picker Button -->
+						<button
+							class="rounded-lg col-span-2 bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-700"
+							on:click={openPaletteEditor}
+						>
+							Open Palette Editor
+						</button>
 					</div>
 				</div>
 			</div>
