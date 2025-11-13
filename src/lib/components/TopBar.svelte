@@ -13,26 +13,6 @@
 		? 'bg-black/40 backdrop-blur-xl'
 		: 'bg-gradient-to-b from-black/60 to-transparent'}"
 >
-	<button
-		class="rounded bg-white/10 p-2 transition-colors hover:bg-white/20"
-		on:click={() => dispatch('toggleSettings')}
-		aria-label="Toggle settings"
-	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="20"
-			height="20"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class="text-white"
-		>
-			<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-		</svg>
-	</button>
 
 	<div class="font-semibold text-white">Camera</div>
 
