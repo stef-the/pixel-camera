@@ -82,7 +82,7 @@
 		try {
 			const devices = await navigator.mediaDevices.enumerateDevices();
 			allCameras = devices.filter((device) => device.kind === 'videoinput');
-            const excludeKeywords = ['virtual', 'screen', 'display', 'double', 'triple'];
+            const excludeKeywords = ['dual', 'triple'];
             availableCameras = allCameras.filter(
                 (camera) =>
                     !excludeKeywords.some((keyword) =>
